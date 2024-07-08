@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incrémentation et Copie</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .number {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="number" id="number"></div>
+    <button onclick="generateNumber()">Générer</button>
+
+    <script>
+        const gistUrl = 'https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/number.txt';
+
+        // Fonction pour obtenir le nombre actuel depuis le Gist
+        async function getCurrentNumber() {
+            try {
+                const response = await fetch(gistUrl);
+                const numberText = await response.text();
+                const currentNumber = parseInt(numberText, 10);
+                document.getElementById('number').textContent = currentNumber;
+                return currentNumber;
+            } catch (error) {
+                console.error('Erreur lors de la récupération du nombre:', error);
+            }
+        }
+
+        // Fonction pour mettre à jour le nombre dans le Gist
+        async function updateNumber(newNumber) {
+            const token = 'YOUR_GITHUB_PERSONAL_ACCESS_TOKEN';
+            const gistId = 'YOUR_GIST_ID';
+            const filename = 'number.txt';
+
+            try {
+                const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            [filename]: {
+                                content: newNumber.toString()
+                            }
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la mise à jour du Gist');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour du nombre:', error);
+            }
+        }
+
+        // Fonction pour générer un nouveau nombre
+        async function generateNumber() {
+            const currentNumber = await getCurrentNumber();
+
+            // Copier le nombre actuel dans le presse-papier
+            navigator.clipboard.writeText(currentNumber.toString()).then(() => {
+                console.log('Nombre copié dans le presse-papier : ' + currentNumber);
+            }).catch(err => {
+                console.error('Erreur de copie dans le presse-papier : ', err);
+            });
+
+            // Incrémenter le nombre
+            const newNumber = currentNumber + 1;
+
+            // Mettre à jour le nombre dans le Gist
+            await updateNumber(newNumber);
+
+            // Mettre à jour l'affichage
+            document.getElementById('number').textContent = newNumber;
+        }
+
+        // Obtenir le nombre actuel au chargement de la page
+        getCurrentNumber();
+    </script>
+</body>
+</html>
